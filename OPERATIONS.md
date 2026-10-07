@@ -13,6 +13,19 @@
 - Smoke-test login, verification review, role restrictions, published events,
   moderation, gallery approval, and logout.
 
+## Supabase confirmation email delivery
+
+- Keep email confirmation enabled for the Auth project and configure its Site
+  URL plus allowed redirect URLs for every real app origin. Add local origins
+  only to the development project.
+- Configure a verified SMTP sender under Supabase Auth email settings before
+  relying on signup confirmation mail. The built-in sender is intended for
+  low-volume testing and may not deliver reliably. Check Auth logs and the
+  SMTP provider's delivery/bounce logs for a signup attempt.
+- Signup success from the client means Supabase accepted the API request; it
+  does not prove that a confirmation email reached the inbox. Check Spam and
+  Promotions, then verify sender reputation and SMTP delivery.
+
 ## Backup and restore
 
 Use managed Supabase backups and keep an encrypted off-site logical backup on

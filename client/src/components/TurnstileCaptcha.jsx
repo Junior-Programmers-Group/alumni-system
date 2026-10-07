@@ -1,9 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
 const SCRIPT_ID = 'cloudflare-turnstile-script';
-// Cloudflare documents these public keys for local integration testing. The
-// production site key remains required for deployed environments.
-const LOCALHOST_TEST_SITE_KEY = '1x00000000000000000000AA';
 let turnstileLoadPromise;
 
 function loadTurnstile() {
@@ -50,21 +47,19 @@ function loadTurnstile() {
 
 export default function TurnstileCaptcha({ onToken, resetKey, enabled = true }) {
   const containerRef = useRef(null);
+  const widgetIdRef = useRef(null);
   const [widgetError, setWidgetError] = useState('');
   const [retryKey, setRetryKey] = useState(0);
-  const isLocalhost = ['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname);
-  const siteKey = isLocalhost
-    ? (import.meta.env.VITE_TURNSTILE_SITE_KEY || LOCALHOST_TEST_SITE_KEY)
-    : import.meta.env.VITE_TURNSTILE_SITE_KEY;
+  const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY;
 
   useEffect(() => {
     if (!enabled || !siteKey || !containerRef.current) return undefined;
-    let active = true; let widgetId;
+    let active = true;
     setWidgetError('');
     loadTurnstile().then(() => {
       if (!active || !containerRef.current) return;
       try {
-        widgetId = window.turnstile.render(containerRef.current, {
+        widgetIdRef.current = window.turnstile.render(containerRef.current, {
           sitekey: siteKey,
           theme: 'light',
           size: containerRef.current.clientWidth < 300 ? 'compact' : 'flexible',
@@ -89,8 +84,21 @@ export default function TurnstileCaptcha({ onToken, resetKey, enabled = true }) 
       setWidgetError('Could not load Cloudflare security check. Check your connection and retry.');
       }
     });
-    return () => { active = false; if (widgetId !== undefined && window.turnstile) window.turnstile.remove(widgetId); };
-  }, [enabled, siteKey, resetKey, retryKey, onToken]);
+    return () => {
+      active = false;
+      if (widgetIdRef.current !== null && window.turnstile) {
+        window.turnstile.remove(widgetIdRef.current);
+        widgetIdRef.current = null;
+      }
+    };
+  }, [enabled, siteKey, retryKey, onToken]);
+
+  useEffect(() => {
+    if (!enabled || !resetKey || widgetIdRef.current === null || !window.turnstile) return;
+    window.turnstile.reset(widgetIdRef.current);
+    onToken('');
+    setWidgetError('');
+  }, [enabled, resetKey, onToken]);
 
   if (!enabled) return null;
   if (!siteKey) return <p className="captcha-config-error">CAPTCHA is not configured. Add the Turnstile site key to the client environment.</p>;

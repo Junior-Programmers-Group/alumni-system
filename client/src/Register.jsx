@@ -98,9 +98,10 @@ export default function Register({ onLogin, onClose }) {
       return;
     }
 
+    let signUpData;
     let signUpError;
     try {
-      ({ error: signUpError } = await supabase.auth.signUp({
+      ({ data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -137,8 +138,20 @@ export default function Register({ onLogin, onClose }) {
       return;
     }
 
+    if (!signUpData?.user) {
+      setError('We could not confirm that your account was created. Please try again.');
+      setCaptchaToken('');
+      setCaptchaResetKey((key) => key + 1);
+      setLoading(false);
+      return;
+    }
+
+    const confirmationSent = Boolean(signUpData.user.identities?.length);
+
     setMessage(
-      'Registration successful! Please check your email to confirm your account. Your alumni profile is now pending admin verification.'
+      confirmationSent
+        ? 'Your registration was received. Supabase accepted the signup request, but this app cannot confirm that an email reached your inbox. Check Spam/Promotions and verify the project email settings if nothing arrives. Your alumni profile is pending admin verification.'
+        : 'This email may already be registered. Try logging in or use Forgot password to request a new email. If neither works, contact support.'
     );
 
     setForm({
