@@ -188,6 +188,178 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   .admin-shell .admin-sidebar { transition: none; }
 }
 
+/* Shared page rhythm and component sizing across public modules. */
+.app-shell {
+  --mobile-page-gutter: clamp(16px, 4vw, 32px);
+  --module-section-gap: clamp(20px, 3vw, 32px);
+}
+
+.app-shell :is(.feed-layout, .directory-page, .events-page-content, .gallery-page, .notifications-page, .opportunity-shell, .about-nddu-content, .about-nddu-hero-content) {
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.app-shell :is(.feed-heading, .directory-page > header, .events-page-title-block, .gallery-header, .notifications-page > header) {
+  min-width: 0;
+}
+
+.app-shell :is(.feed-heading, .directory-page > header, .events-page-title-block, .gallery-header, .notifications-page > header) :is(h1, p) {
+  overflow-wrap: anywhere;
+}
+
+.app-shell :is(.profile-card, .post-creator, .feed-post, .directory-grid > article, .events-date-toolbar, .events-sidebar, .featured-event-card, .mini-event-card, .gallery-card, .notifications-page article, .opportunity-card, .home-announcements) {
+  min-width: 0;
+}
+
+.app-shell :is(.directory-controls, .gallery-browser-controls, .events-date-toolbar, .opportunity-tools) > :is(input, select, button) {
+  min-width: 0;
+}
+
+@media (max-width: 760px) {
+  .app-shell main#top {
+    width: 100%;
+    max-width: none;
+    padding-inline: 0;
+  }
+
+  .app-shell .content-grid {
+    width: calc(100% - 2 * var(--mobile-page-gutter));
+    margin-inline: auto;
+  }
+
+  .app-shell .institution-bar {
+    display: flex;
+    min-height: 40px;
+    box-sizing: border-box;
+    justify-content: space-between;
+    gap: 8px 14px;
+    padding: 7px var(--mobile-page-gutter);
+    font-size: .78rem;
+  }
+
+  .app-shell .institution-bar > div {
+    min-width: 0;
+  }
+
+  .app-shell .institution-bar > div span,
+  .app-shell .institution-bar > div a:first-child {
+    display: none;
+  }
+
+  .app-shell .institution-bar > div a:last-child,
+  .app-shell .institution-bar > a:last-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .app-shell .institution-bar > a:last-child {
+    flex: 0 0 auto;
+    font-size: .7rem;
+  }
+
+  .app-shell .hero-section {
+    box-sizing: border-box;
+    min-height: clamp(330px, 76svh, 470px);
+    padding: clamp(32px, 8vw, 56px) var(--mobile-page-gutter);
+  }
+
+  .app-shell .hero-copy {
+    width: min(100%, 680px);
+    max-width: none;
+    margin-inline: auto;
+  }
+
+  .app-shell .hero-copy .eyebrow {
+    max-width: 34ch;
+    margin: 0 0 8px;
+    font-size: .78rem;
+    font-weight: 800;
+    line-height: 1.45;
+    letter-spacing: .045em;
+    text-transform: uppercase;
+  }
+
+  .app-shell .hero-copy h1 {
+    max-width: 17ch;
+    font-size: clamp(2rem, 8vw, 2.75rem);
+    line-height: 1.12;
+    letter-spacing: -.02em;
+  }
+
+  .app-shell .hero-copy > p:not(.eyebrow) {
+    max-width: 54ch;
+    margin-top: 12px;
+    font-size: clamp(1rem, 4.2vw, 1.125rem);
+    line-height: 1.55;
+  }
+
+  .app-shell .hero-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    margin-top: 22px;
+  }
+
+  .app-shell .hero-actions > :is(button, a) {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    min-height: 48px;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .app-shell .quick-section,
+  .app-shell .home-announcements {
+    padding: clamp(20px, 5vw, 30px);
+  }
+
+  .app-shell .section-intro h2 {
+    max-width: 22ch;
+    font-size: clamp(1.65rem, 6.4vw, 2rem);
+    line-height: 1.22;
+  }
+
+  .app-shell .section-intro > p:last-child {
+    max-width: 58ch;
+    line-height: 1.65;
+  }
+
+  .app-shell :is(.feed-layout, .directory-page, .events-page-content, .gallery-page, .notifications-page, .opportunity-shell, .about-nddu-content) {
+    width: calc(100% - 2 * var(--mobile-page-gutter));
+    padding-top: clamp(24px, 6vw, 40px);
+    padding-bottom: clamp(40px, 9vw, 60px);
+  }
+
+  .app-shell :is(.feed-heading, .directory-page > header, .events-page-title-block, .gallery-header, .notifications-page > header) {
+    margin-bottom: var(--module-section-gap);
+  }
+
+  .app-shell :is(.feed-heading h1, .directory-page > header h1, .events-page-title-block h1, .gallery-header h1, .notifications-page h1) {
+    font-size: clamp(1.8rem, 7vw, 2.35rem);
+    line-height: 1.15;
+    letter-spacing: -.02em;
+  }
+
+  .app-shell :is(.directory-grid, .events-grid, .gallery-grid, .home-announcement-list, .opportunity-list) {
+    gap: 14px;
+  }
+
+  .app-shell :is(.profile-card, .post-creator, .feed-post, .directory-grid.enhanced > article, .events-date-toolbar, .events-sidebar, .gallery-card, .gallery-my-submissions, .opportunity-card, .home-announcements) {
+    border-radius: 12px;
+  }
+}
+
+@media (max-width: 420px) {
+  .app-shell { --mobile-page-gutter: 16px; }
+  .app-shell .institution-bar { font-size: .72rem; }
+  .app-shell .institution-bar > a:last-child { max-width: 42%; }
+  .app-shell .hero-section { min-height: clamp(330px, 72svh, 420px); }
+  .app-shell .hero-copy h1 { font-size: clamp(1.9rem, 8.4vw, 2.35rem); }
+  .app-shell .hero-copy .eyebrow { font-size: .72rem; }
+}
+
 /* Spacious mobile navigation, inspired by a campus directory. */
 .site-nav-backdrop, .site-drawer-heading, .site-drawer-intro, .site-drawer-footer { display: none; }
 @media (max-width: 1100px) {

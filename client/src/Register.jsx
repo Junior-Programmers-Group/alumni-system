@@ -98,27 +98,36 @@ export default function Register({ onLogin, onClose }) {
       return;
     }
 
-    const { error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        ...(captchaEnabled ? { captchaToken } : {}),
-        emailRedirectTo: `${window.location.origin}/`,
-        data: {
-          first_name: firstName,
-          last_name: lastName,
-          roles,
-          degree,
-          course,
-          department,
-          graduation_year: graduationYear,
-          batch_name: batchName,
-          organization,
-          job_title: jobTitle,
-          company_email: companyEmail,
+    let signUpError;
+    try {
+      ({ error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          ...(captchaEnabled ? { captchaToken } : {}),
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            first_name: firstName,
+            last_name: lastName,
+            roles,
+            degree,
+            course,
+            department,
+            graduation_year: graduationYear,
+            batch_name: batchName,
+            organization,
+            job_title: jobTitle,
+            company_email: companyEmail,
+          },
         },
-      },
-    });
+      }));
+    } catch {
+      setError('We could not reach the sign-up service. Check your connection and try again.');
+      setCaptchaToken('');
+      setCaptchaResetKey((key) => key + 1);
+      setLoading(false);
+      return;
+    }
 
     if (signUpError) {
       setError(signUpError.message);

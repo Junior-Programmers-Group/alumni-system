@@ -66,9 +66,15 @@ export default function AdminPortal() {
       setState('signed-out');
       return;
     }
-    const { error } = await supabase.auth.signInWithPassword({ email, password, options: captchaEnabled ? { captchaToken } : {} });
-    if (error) {
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password, options: captchaEnabled ? { captchaToken } : {} });
+      if (!error) return;
       setMessage(error.message);
+      setCaptchaToken('');
+      setCaptchaResetKey((key) => key + 1);
+      setState('signed-out');
+    } catch {
+      setMessage('We could not reach the sign-in service. Check your connection and try again.');
       setCaptchaToken('');
       setCaptchaResetKey((key) => key + 1);
       setState('signed-out');

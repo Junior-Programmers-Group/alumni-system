@@ -21,6 +21,11 @@ Set these through Vercel project settings. Keep preview and production environme
 | `VITE_SUPABASE_URL` | Browser Supabase project URL, required during build |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | Browser-safe Supabase key, required during build |
 | `VITE_TURNSTILE_SITE_KEY` | Browser CAPTCHA site key; authorize the deployed hostname in Cloudflare |
+
+For local development, the client automatically uses Cloudflare's published
+Turnstile test site key on `localhost` and `127.0.0.1` when no key is set. The
+test key is for local UI/integration checks only; deployed environments must
+set a real site key and authorize their hostname in Cloudflare.
 | `SUPABASE_URL` | Server project URL; use the same project as the client |
 | `SUPABASE_PUBLISHABLE_KEY` | Server's publishable key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Privileged server credential; never give it a `VITE_` prefix |
