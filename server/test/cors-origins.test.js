@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { configuredOrigins } from '../src/corsOrigins.js';
+import { configuredOrigins } from '../src/config/corsOrigins.js';
 
 test('Vercel exact production and deployment domains are allowed even with a stale localhost setting', () => {
   const origins = configuredOrigins({ NODE_ENV: 'production', VERCEL: '1', CLIENT_ORIGIN: 'http://localhost:5173', VERCEL_PROJECT_PRODUCTION_URL: 'alumni-system-client.vercel.app', VERCEL_URL: 'alumni-abc-team.vercel.app', VERCEL_BRANCH_URL: 'alumni-git-main-team.vercel.app' });

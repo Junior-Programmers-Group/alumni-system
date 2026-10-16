@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { RedisRateLimitStore, rateLimitStore } from '../src/redisRateLimitStore.js';
+import { RedisRateLimitStore, rateLimitStore } from '../src/security/redisRateLimitStore.js';
 
 test('separate instances use the same remote counter and isolate limiter namespaces', async () => {
   const counters = new Map();

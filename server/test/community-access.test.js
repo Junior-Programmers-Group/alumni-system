@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { communityAccess } from '../../client/src/lib/communityAccess.js';
+import { communityAccess } from '../../client/src/services/communityAccess.js';
 
 test('verified super admin can use community pages without an alumni submission', () => {
   assert.deepEqual(communityAccess('owner', { id: 'owner', role: 'admin', status: 'verified' }, null), { isSuperAdmin: true, verificationStatus: 'verified' });
@@ -10,7 +10,9 @@ test('pending, suspended, deactivated and previous-account profiles do not grant
   for (const profile of [
     { id: 'owner', role: 'admin', status: 'pending' },
     { id: 'owner', role: 'admin', status: 'suspended' },
-    { id: 'owner', role: 'admin', status: 'verified', deactivated_at: '2026-09-22' },
+    // Deactivated accounts are marked suspended server-side; the client no
+    // longer needs permission to read the private deactivated_at column.
+    { id: 'owner', role: 'admin', status: 'suspended' },
     { id: 'other', role: 'admin', status: 'verified' },
   ]) assert.equal(communityAccess('owner', profile, null).isSuperAdmin, false);
   assert.equal(communityAccess('owner', { id: 'owner', role: 'admin', status: 'suspended' }, 'verified').verificationStatus, null);

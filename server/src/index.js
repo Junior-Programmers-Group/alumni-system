@@ -1,12 +1,12 @@
 import { createAsyncCache } from '../../shared/asyncCache.mjs';
-import { opportunityUpdateSchema, galleryCurationSchema } from './adminValidation.js';
+import { opportunityUpdateSchema, galleryCurationSchema } from './validation/adminSchemas.js';
 import cors from 'cors';
-import { configuredOrigins } from './corsOrigins.js';
+import { configuredOrigins } from './config/corsOrigins.js';
 import dotenv from 'dotenv';
 import express from 'express';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import { rateLimitStore } from './redisRateLimitStore.js';
+import { rateLimitStore } from './security/redisRateLimitStore.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createClient } from '@supabase/supabase-js';
@@ -20,7 +20,7 @@ if (!process.env.VERCEL) {
   dotenv.config({ path: path.join(__dirname, '../../client/.env.local') });
 }
 
-const giphyApiKey = process.env.GIPHY_API_KEY || process.env.VITE_GIPHY_API_KEY;
+const giphyApiKey = process.env.GIPHY_API_KEY;
 
 const app = express();
 const port = process.env.PORT || 4000;
@@ -366,6 +366,15 @@ const apiLimiter = rateLimit({
   handler: (_req, res) => publicError(res, 429, 'RATE_LIMITED', 'Too many requests. Please try again shortly.'),
 });
 app.use('/api', apiLimiter);
+
+const gifLimiter = rateLimit({
+  store: rateLimitStore('gifs'),
+  windowMs: 60_000,
+  limit: 60,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  handler: (_req, res) => publicError(res, 429, 'RATE_LIMITED', 'Too many GIF searches. Please try again shortly.'),
+});
 
 app.get('/api/config', async (_req, res, next) => {
   try {
@@ -1328,6 +1337,40 @@ adminRouter.patch(
    ALUMNI VERIFICATIONS
 ========================================================= */
 
+adminRouter.get('/verifications/tracer-summary', async (_req, res, next) => {
+  try {
+    const { data, error } = await adminClient.rpc('admin_tracer_study_summary');
+    if (error) throw error;
+    res.set('Cache-Control', 'no-store').json({ summary: data || {} });
+  } catch (error) { next(error); }
+});
+
+adminRouter.get('/verifications/tracer-responses', async (req, res, next) => {
+  const search = String(req.query.search || '').trim().slice(0, 120);
+  const country = String(req.query.country || '').trim().slice(0, 100);
+  const department = String(req.query.department || '').trim().slice(0, 120);
+  const program = String(req.query.program || '').trim().slice(0, 160);
+  const page = Math.min(Math.max(Number.parseInt(req.query.page, 10) || 1, 1), 100_000);
+  const limit = 50;
+  try {
+    const { data, error } = await adminClient.rpc('admin_tracer_study_responses', {
+      p_search: search,
+      p_country: country,
+      p_department: department,
+      p_program: program,
+      p_limit: limit,
+      p_offset: (page - 1) * limit,
+    });
+    if (error) throw error;
+    res.set('Cache-Control', 'no-store').json({
+      responses: data || [],
+      total: Number(data?.[0]?.total_count || 0),
+      page,
+      pageSize: limit,
+    });
+  } catch (error) { next(error); }
+});
+
 adminRouter.get(
   '/verifications',
   async (req, res, next) => {
@@ -1366,6 +1409,7 @@ adminRouter.get(
             document_filename,
             status,
             reviewer_note, assigned_to, priority, expires_at, retention_delete_at, document_deleted_at, scan_status, file_size_bytes, mime_type, reviewed_at,
+            tracer_status, tracer_country, tracer_region, tracer_city, tracer_employer, tracer_job_title, tracer_industry, tracer_employment_type, tracer_degree_related, tracer_study_program, tracer_study_institution, tracer_consent, tracer_submitted_at,
             created_at,
             profiles!alumni_verifications_user_id_fkey(
               first_name,
@@ -2105,7 +2149,7 @@ app.use(
   adminRouter
 );
 
-app.get('/api/gifs', async (req, res, next) => {
+app.get('/api/gifs', gifLimiter, async (req, res, next) => {
   try {
     if (!giphyApiKey) return publicError(res, 503, 'GIFS_NOT_CONFIGURED', 'GIF search is not configured. Add GIPHY_API_KEY to server/.env and restart the server.');
     const parsed = z.object({ q: z.string().trim().max(80).optional() }).safeParse(req.query);
@@ -2114,7 +2158,9 @@ app.get('/api/gifs', async (req, res, next) => {
     const endpoint = query ? 'search' : 'trending';
     const params = new URLSearchParams({ api_key: giphyApiKey, limit: '12', rating: 'g' });
     if (query) params.set('q', query);
-    const response = await fetch(`https://api.giphy.com/v1/gifs/${endpoint}?${params}`);
+    const response = await fetch(`https://api.giphy.com/v1/gifs/${endpoint}?${params}`, {
+      signal: AbortSignal.timeout(8000),
+    });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) return publicError(res, 502, 'GIF_PROVIDER_ERROR', 'GIFs are temporarily unavailable.');
     res.json({ gifs: Array.isArray(payload.data) ? payload.data : [] });

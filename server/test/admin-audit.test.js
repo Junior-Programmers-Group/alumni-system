@@ -1,8 +1,8 @@
 ﻿import assert from 'node:assert/strict';
 import { after, before, beforeEach, test } from 'node:test';
 import http from 'node:http';
-import { opportunityUpdateSchema, galleryCurationSchema } from '../src/adminValidation.js';
-import { toLocalDateTime, toApiDateTime } from '../../client/src/lib/adminDates.js';
+import { opportunityUpdateSchema, galleryCurationSchema } from '../src/validation/adminSchemas.js';
+import { toLocalDateTime, toApiDateTime } from '../../client/src/features/admin/lib/adminDates.js';
 
 const adminId = '00000000-0000-4000-8000-000000000001';
 const memberId = '00000000-0000-4000-8000-000000001501';
@@ -198,7 +198,7 @@ test('array request bodies are rejected consistently', async () => {
 });
 
 test('member CSV exports neutralize spreadsheet formulas and preserve quotes', async () => {
-  const { csvCell } = await import('../../client/src/lib/adminCsv.js');
+  const { csvCell } = await import('../../client/src/features/admin/lib/adminCsv.js');
   assert.equal(csvCell('=HYPERLINK("https://example.test")').startsWith('"\'='), true);
   assert.equal(csvCell(' +123').startsWith('"\''), true);
   assert.equal(csvCell('Alice "A"'), '"Alice ""A"""');

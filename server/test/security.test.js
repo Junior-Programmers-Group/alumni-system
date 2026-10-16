@@ -42,6 +42,13 @@ test('database schema protects alumni community writes', async () => {
   assert.match(schema, /commit;\s*$/);
   assert.match(schema, /Users can publish their own feed posts[\s\S]*public\.is_verified_user\(\)/);
   assert.match(schema, /Users can send direct messages[\s\S]*public\.is_verified_user\(\)/);
+  assert.match(schema, /revoke select on table public\.profiles from public, anon, authenticated;[\s\S]*revoke select \(email, locked_until, suspension_reason, deactivated_at,[\s\S]*warnings_count\)[\s\S]*grant select \(id, first_name, last_name, role, status, avatar_url, cover_url, created_at\)[\s\S]*to authenticated;/);
+  assert.match(schema, /tracer_status text[\s\S]*tracer_country text[\s\S]*tracer_consent boolean[\s\S]*tracer_submitted_at timestamptz/);
+  assert.match(schema, /Users can submit own verification[\s\S]*tracer_consent is true[\s\S]*tracer_status is not null/);
+  assert.match(schema, /admin_tracer_study_summary\(\)[\s\S]*having count\(\*\) >= 3[\s\S]*to service_role/);
+  assert.match(schema, /admin_tracer_study_responses\([\s\S]*concat_ws\('[^']*',p\.first_name,p\.last_name,p\.email,l\.program,l\.tracer_country,l\.tracer_employer,l\.tracer_job_title\)/);
+  assert.match(schema, /update_own_tracer_study\([\s\S]*public\.is_verified_user\(\)[\s\S]*status='verified'[\s\S]*to authenticated/);
+  assert.doesNotMatch(schema, /grant select \([^)]*email[^)]*\)[\s\S]*on table public\.profiles to authenticated;/);
   assert.match(schema, /Anyone can view published events[\s\S]*payload ->> 'status' = 'published'/);
   assert.match(schema, /normalize_opportunity_author/);
   assert.match(schema, /create or replace function public\.manage_event_registration[\s\S]*for update[\s\S]*skip locked/);
@@ -84,6 +91,7 @@ test('admin resource routes require the owning permission scope', () => {
   assert.equal(requiredAdminScope('/resources/news'), 'moderation');
   assert.equal(requiredAdminScope('/resources/reports'), 'analytics');
   assert.equal(requiredAdminScope('/resources/surveys'), 'settings');
+  assert.equal(requiredAdminScope('/verifications/tracer-summary'), 'verification');
 });
 
 test('event payloads are normalized and malformed values are rejected', () => {

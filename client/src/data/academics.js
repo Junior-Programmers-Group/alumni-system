@@ -30,6 +30,17 @@ export const ACADEMIC_PROGRAMS = {
 };
 
 export const DEPARTMENTS = Object.keys(ACADEMIC_PROGRAMS);
+export const BACHELOR_PROGRAMS = Object.fromEntries(
+  DEPARTMENTS.map(department => [
+    department,
+    ACADEMIC_PROGRAMS[department].filter(course =>
+      course.startsWith('BS ') || course.startsWith('Bachelor '),
+    ),
+  ]),
+);
+export const departmentForCourse = course =>
+  DEPARTMENTS.find(department => ACADEMIC_PROGRAMS[department].includes(course)) || '';
+
 export const GRADUATION_YEARS = Array.from(
   { length: new Date().getFullYear() - 1953 + 1 },
   (_, index) => new Date().getFullYear() - index

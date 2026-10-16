@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { commentFileType } from '../../client/src/lib/commentAttachments.js';
+import { commentFileType } from '../../client/src/features/feed/lib/commentAttachments.js';
 
 test('comment files accept supported formats and infer empty browser MIME types', () => {
   assert.equal(commentFileType({ name: 'Reunion.PDF', type: 'application/pdf' }), 'application/pdf');

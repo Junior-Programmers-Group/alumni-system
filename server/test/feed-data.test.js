@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createClient } from '@supabase/supabase-js';
-import { feedPageQuery, commentsPageQuery, normalizeFeedPost, applyOwnReaction, mergeRows } from '../../client/src/lib/feedData.js';
+import { feedPageQuery, commentsPageQuery, normalizeFeedPost, applyOwnReaction, mergeRows } from '../../client/src/features/feed/lib/feedData.js';
 
 function captureQueries() {
   const requests = [];
