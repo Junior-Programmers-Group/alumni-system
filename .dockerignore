@@ -1,0 +1,12 @@
+.git
+.github
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+**/node_modules
+**/dist
+client/.env.local
+server/.env
+npm-debug.log*

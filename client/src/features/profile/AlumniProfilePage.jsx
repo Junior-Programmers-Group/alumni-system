@@ -9,7 +9,7 @@ import './ProfileMediaEditor.css';
 const nameOf=(p)=>[p?.first_name,p?.last_name].filter(Boolean).join(' ')||'Alumni member';
 const DEGREE_OPTIONS=[...new Set(Object.values(ACADEMIC_PROGRAMS).flat().map(degreeForCourse))];
 
-export default function AlumniProfilePage({user,profile,onProfileChange}){
+export default function AlumniProfilePage({user,profile,verificationStatus,onProfileChange}){
   const [details,setDetails]=useState(null),[posts,setPosts]=useState([]),[friends,setFriends]=useState([]),[tab,setTab]=useState('posts');
   const [loading,setLoading]=useState(true),[error,setError]=useState(''),[composer,setComposer]=useState(false),[content,setContent]=useState(''),[photo,setPhoto]=useState(null),[publishing,setPublishing]=useState(false),[expanded,setExpanded]=useState([]),[editing,setEditing]=useState(false),[saving,setSaving]=useState(false);
   const [postGif,setPostGif]=useState('');
@@ -17,18 +17,18 @@ export default function AlumniProfilePage({user,profile,onProfileChange}){
   const [avatarFile,setAvatarFile]=useState(null),[coverFile,setCoverFile]=useState(null),[removeAvatar,setRemoveAvatar]=useState(false),[removeCover,setRemoveCover]=useState(false);
   const photoRef=useRef(null);
 
-  async function load(){
-    setLoading(true);setError('');
+  async function load({showLoading=true}={}){
+    if(showLoading)setLoading(true);setError('');
     const [detailResult,postResult,connectionResult,directoryResult]=await Promise.all([
       supabase.rpc('get_public_alumni_profile',{p_profile_id:user.id}).maybeSingle(),
       supabase.from('feed_posts').select('id,user_id,author_name,author_avatar_url,content,media_path,gif_url,created_at,feed_reactions(user_id,reaction),feed_comments(id,user_id,author_name,content,media_path,gif_url,parent_comment_id,created_at)').eq('user_id',user.id).eq('moderation_status','published').is('deleted_at',null).order('created_at',{ascending:false}),
       supabase.from('alumni_connections').select('user_low,user_high,status').eq('status','accepted').or(`user_low.eq.${user.id},user_high.eq.${user.id}`),
       supabase.rpc('list_chat_profiles'),
     ]);
-    if(detailResult.error)setError(detailResult.error.message);
+    if(detailResult.error){setError(detailResult.error.message);if(showLoading)setLoading(false);return false;}
     setDetails(detailResult.data);setPosts(postResult.data||[]);
     const ids=new Set((connectionResult.data||[]).map(row=>row.user_low===user.id?row.user_high:row.user_low));
-    setFriends((directoryResult.data||[]).filter(person=>ids.has(person.id)));setLoading(false);
+    setFriends((directoryResult.data||[]).filter(person=>ids.has(person.id)));if(showLoading)setLoading(false);return true;
   }
   useEffect(()=>{load()},[user.id]);
   const display={...profile,...details},name=nameOf(display),initials=name.split(/\s+/).map(x=>x[0]).slice(0,2).join('').toUpperCase();
@@ -41,7 +41,10 @@ export default function AlumniProfilePage({user,profile,onProfileChange}){
   function openEditor(){const course=display.course||'';setEdit({first_name:display.first_name||'',last_name:display.last_name||'',degree:display.degree||(course?degreeForCourse(course):''),course,department:display.department||departmentForCourse(course),graduation_year:display.graduation_year||'',batch_name:display.batch_name||'',honors:display.honors||''});setAvatarFile(null);setCoverFile(null);setRemoveAvatar(false);setRemoveCover(false);setEditing(true)}
   function updateEducationField(name,value){setEdit(current=>({...current,[name]:value,...(name==='department'?{course:'',degree:''}:{}),...(name==='course'?{degree:degreeForCourse(value)}:{})}))}
   async function saveProfile(event){
-    event.preventDefault();setSaving(true);setError('');let avatarPath=null,coverPath=null;
+    event.preventDefault();setError('');
+    if(verificationStatus!=='verified'){setError('Your alumni account must be verified by the Alumni Office before you can change or update your profile. Submit your verification details and wait for approval.');return}
+    setSaving(true);let avatarPath=null,coverPath=null;
+    if(!edit.degree.trim()){setError('Select a degree before saving your alumni profile.');setSaving(false);return}
     const validTypes=['image/jpeg','image/png','image/webp'];
     if(avatarFile&&(!validTypes.includes(avatarFile.type)||avatarFile.size>2*1024*1024)){setError('Profile pictures must be JPG, PNG, or WebP and no larger than 2 MB.');setSaving(false);return}
     if(coverFile&&(!validTypes.includes(coverFile.type)||coverFile.size>5*1024*1024)){setError('Cover photos must be JPG, PNG, or WebP and no larger than 5 MB.');setSaving(false);return}
@@ -55,7 +58,13 @@ export default function AlumniProfilePage({user,profile,onProfileChange}){
     const storedPath=url=>decodeURIComponent(url?.split('/profile-avatars/')[1]?.split('?')[0]||'');
     const obsolete=[];if(avatarPath||removeAvatar)obsolete.push(storedPath(display.avatar_url));if(coverPath||removeCover)obsolete.push(storedPath(display.cover_url));
     const ownedObsolete=obsolete.filter(path=>path.startsWith(`${user.id}/`)&&path!==avatarPath&&path!==coverPath);if(ownedObsolete.length)await supabase.storage.from('profile-avatars').remove(ownedObsolete);
-    onProfileChange?.(profileResult.data.profile);setEditing(false);setSaving(false);await load();setError('Profile saved successfully.');
+    const savedEducation=profileResult.data?.education;
+    const expectedEducation={degree:edit.degree.trim(),course:edit.course.trim(),department:edit.department.trim(),graduation_year:edit.graduation_year?Number(edit.graduation_year):null,batch_name:edit.batch_name.trim(),honors:edit.honors.trim()};
+    const educationMatches=savedEducation&&Object.entries(expectedEducation).every(([key,value])=>String(savedEducation[key]??'')===String(value??''));
+    if(!profileResult.data?.profile||!educationMatches){if(avatarPath)await supabase.storage.from('profile-avatars').remove([avatarPath]);if(coverPath)await supabase.storage.from('profile-avatars').remove([coverPath]);setError('The database did not confirm the education details were saved. Check the degree and try again; if this continues, the Supabase save function needs updating.');setSaving(false);return}
+    setDetails(current=>({...current,...profileResult.data.profile,degree:savedEducation.degree,course:savedEducation.course,department:savedEducation.department,graduation_year:savedEducation.graduation_year,batch_name:savedEducation.batch_name,honors:savedEducation.honors}));
+    onProfileChange?.(profileResult.data.profile);setEditing(false);setSaving(false);
+    const refreshed=await load({showLoading:false});if(refreshed)setError('Profile saved successfully.');
   }
   async function publish(event){
     event.preventDefault();if(!content.trim()&&!photo&&!postGif)return;setPublishing(true);setError('');let mediaPath=null;

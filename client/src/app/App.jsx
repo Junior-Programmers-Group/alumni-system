@@ -657,7 +657,7 @@ function App() {
         ) : activeTab === 'Help & support' ? (
           <CommunityServices key="help-page" initialTab="request" user={user} />
         ) : activeTab === 'Profile' && user ? (
-          <AlumniProfilePage user={user} profile={accountProfile} onProfileChange={setAccountProfile} />
+          <AlumniProfilePage user={user} profile={accountProfile} verificationStatus={verificationStatus} onProfileChange={setAccountProfile} />
         ) : activeTab === 'Notifications' && user ? (
           <NotificationsPage notifications={notifications} onOpen={openNotification} onMarkAll={markAllNotificationsRead} onChange={setNotifications} />
         ) : activeTab === 'Directory' ? (
