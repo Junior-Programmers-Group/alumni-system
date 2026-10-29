@@ -11,8 +11,8 @@ pipeline {
     environment {
         IMAGE_NAME = 'nddu-alumni'
         CONTAINER_NAME = 'nddu-alumni'
-        APP_PORT = '14000'
-        HOST_PORT = '4000'
+        APP_PORT = '4000'
+        HOST_PORT = '14000'
     }
 
     stages {
