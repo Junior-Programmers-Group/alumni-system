@@ -3,7 +3,10 @@
 ## Deployment checklist
 
 - Apply `supabase/schema.sql` and retain the SQL execution record.
-- Configure exact HTTPS origins in `CLIENT_ORIGIN`; set `NODE_ENV=production`.
+- Set `NODE_ENV=production`. For deployments where Express serves both the
+  frontend and API, requests from the app's own public host and port are
+  accepted as same-origin automatically. Configure exact HTTPS origins in
+  `CLIENT_ORIGIN` only when the frontend is hosted on a separate domain.
 - Use separate Supabase projects and credentials for development and production.
 - Enable leaked-password protection, email confirmation, MFA enrollment for all
   administrators, database backups, point-in-time recovery, and storage logs.

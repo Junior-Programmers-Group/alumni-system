@@ -7,7 +7,6 @@ test('Vercel exact production and deployment domains are allowed even with a sta
   for (const host of ['alumni-system-client.vercel.app', 'alumni-abc-team.vercel.app', 'alumni-git-main-team.vercel.app']) assert.equal(origins.has(`https://${host}`), true);
   for (const value of ['https://unrelated.vercel.app', 'https://alumni-system-client.vercel.app.evil.example', 'http://alumni-system-client.vercel.app', 'null']) assert.equal(origins.has(value), false);
 });
-
 test('configured origins normalize whitespace, host casing and trailing slashes', () => {
   assert.deepEqual([...configuredOrigins({ NODE_ENV: 'production', CLIENT_ORIGIN: ' https://ALUMNI.example/ , https://www.alumni.example:443/' })], ['https://alumni.example', 'https://www.alumni.example']);
 });
@@ -42,5 +41,11 @@ test('production API accepts same-site admin preflight and still requires authen
     const rejected = await fetch(endpoint, { method: 'OPTIONS', headers: { Origin: 'https://unrelated.vercel.app', 'Access-Control-Request-Method': 'POST' } });
     assert.equal(rejected.status, 403);
     assert.equal(rejected.headers.get('access-control-allow-origin'), null);
+
+    // The app serves its frontend and API from this same public origin. This
+    // should work even if a stale localhost CLIENT_ORIGIN was supplied.
+    const sameOriginResponse = await fetch(endpoint, { method: 'OPTIONS', headers: { Origin: origin, 'Access-Control-Request-Method': 'POST', 'Access-Control-Request-Headers': 'authorization,content-type' } });
+    assert.equal(sameOriginResponse.status, 204);
+    assert.equal(sameOriginResponse.headers.get('access-control-allow-origin'), origin);
   } finally { await new Promise(resolve => server.close(resolve)); }
 });

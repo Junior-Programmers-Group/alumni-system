@@ -152,6 +152,15 @@ function isAllowedDevelopmentOrigin(origin) {
   }
 }
 
+function isSameRequestOrigin(origin, req) {
+  try {
+    const requestUrl = new URL(`${req.protocol}://${req.get('host')}`);
+    return new URL(origin).origin === requestUrl.origin;
+  } catch {
+    return false;
+  }
+}
+
 function inputError(message) {
   return Object.assign(new Error(message), { status: 400, publicMessage: message });
 }
@@ -322,7 +331,6 @@ app.use(helmet({
       objectSrc: ["'none'"],
       baseUri: ["'self'"],
       formAction: ["'self'"],
-      upgradeInsecureRequests: [],
     },
   } : false,
   crossOriginResourcePolicy: { policy: 'cross-origin' },
@@ -336,6 +344,13 @@ app.use(
       }
       
       if (isAllowedDevelopmentOrigin(origin)) {
+        return callback(null, true);
+      }
+
+      // The production image serves the frontend and API from the same host.
+      // Accept that request origin directly, so CLIENT_ORIGIN does not need
+      // to duplicate the deployment's public host and port for same-origin use.
+      if (isProduction && isSameRequestOrigin(origin, req)) {
         return callback(null, true);
       }
       

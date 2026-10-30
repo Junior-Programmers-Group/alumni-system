@@ -79,7 +79,17 @@ pipeline {
                             exit 1
                         fi
 
-                        echo "Container is running."
+                        # Verify that the published host port reaches Express,
+                        # rather than only checking the container process state.
+                        if ! curl --fail --silent --show-error \
+                            --retry 10 --retry-delay 2 --retry-connrefused \
+                            "http://127.0.0.1:$HOST_PORT/api/status" \
+                            >/dev/null; then
+                            docker logs "$CONTAINER_NAME"
+                            exit 1
+                        fi
+
+                        echo "Container is running and /api/status is reachable."
                     '''
                 }
             }
